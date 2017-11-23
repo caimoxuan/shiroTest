@@ -20,6 +20,7 @@
                 <mappers>
                         <mapper resource="mapper/SystemUserMapper.xml" />
                         <mapper resource="mapper/UserSessionMapper.xml" />
+                        <mapper resource="mapper/SystemPermissionMapper.xml" />
                 </mappers>
 
         </configuration>

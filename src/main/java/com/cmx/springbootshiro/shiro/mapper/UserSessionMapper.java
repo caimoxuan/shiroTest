@@ -5,6 +5,7 @@ import com.cmx.springbootshiro.shiro.entity.SessionEntity;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Mapper
 public interface UserSessionMapper {
@@ -15,8 +16,9 @@ public interface UserSessionMapper {
 
     void delete(Serializable session);
 
-    SessionEntity query(Serializable session);
+    List<SessionEntity> query(Serializable session);
 
     SessionEntity getById(Serializable session);
+
 
 }

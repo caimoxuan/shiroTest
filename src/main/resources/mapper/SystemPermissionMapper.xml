@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cmx.springbootshiro.mapper.UserPermissionMapper">
+
+    <resultMap id="userRoleMap" type="java.util.HashMap">
+        <result property="userId" column="user_id" />
+        <result property="roleId" column="role_id" />
+        <result property="roleName" column="role" />
+        <result property="description" column="description" />
+        <result property="available" column="available" />
+    </resultMap>
+
+    <resultMap id="roleMap" type="java.util.HashMap" >
+        <result property="roleId" column="id" />
+        <result property="roleName" column="role"/>
+        <result property="description" column="description" />
+        <result property="available" column="available" />
+    </resultMap>
+
+    <select id="queryRole" resultMap="userRoleMap" parameterType="String">
+        select user_id,role_id,role,description,available
+        from sys_users_roles
+        join sys_roles on(sys_users_roles.role_id = sys_roles.id)
+        where user_id = #{userId};
+    </select>
+
+    <select id="findAllRole" resultMap="roleMap">
+        select id,role,description,available
+        from sys_roles
+    </select>
+
+    <insert id="addUserRole" parameterType="java.util.HashMap">
+        insert into sys_users_roles(user_id,role_id)values(#{userId},#{roleId})
+    </insert>
+
+    <insert id="addSystemRole" parameterType="java.util.HashMap">
+        insert into sys_roles(role, description, available)values(#{role}, #{description}, #{available})
+    </insert>
+
+</mapper>

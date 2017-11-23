@@ -1,6 +1,7 @@
 package com.cmx.springbootshiro.shiro.realm;
 
 import com.cmx.springbootshiro.entity.SystemUser;
+import com.cmx.springbootshiro.iservice.IUserPermissionService;
 import com.cmx.springbootshiro.service.SystemUserService;
 import org.apache.shiro.authc.*;
 import org.apache.shiro.authz.AuthorizationInfo;
@@ -12,8 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class SimpleUserAuthRealm extends AuthorizingRealm {
 
@@ -23,6 +24,9 @@ public class SimpleUserAuthRealm extends AuthorizingRealm {
     @Autowired
     SystemUserService systemUserService;
 
+    @Autowired
+    IUserPermissionService userPermissionService;
+
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principalCollection) {
 
@@ -30,12 +34,20 @@ public class SimpleUserAuthRealm extends AuthorizingRealm {
         System.out.println("进入权限授予");
         SimpleAuthorizationInfo authorizationInfo = new SimpleAuthorizationInfo();
         Object object = principalCollection.getPrimaryPrincipal();
-
         log.debug("权限授予中的userName : {}", object.toString());
-        List<String> permissionList = new ArrayList<>();
-        permissionList.add("admin");
-        authorizationInfo.addStringPermissions(permissionList);
+        SystemUser user = systemUserService.findUserByName(object.toString());
+        List<Map<String, Object>> roleList = userPermissionService.queryRole(user.getId().toString());
+//        List<String> permissionList = new ArrayList<>();
+//        permissionList.add("admin");
+//        authorizationInfo.addStringPermissions(permissionList);
 
+        //授权角色
+        if(null != roleList){
+            for(Map<String, Object> list : roleList){
+                authorizationInfo.addRole(list.get("roleName").toString());
+            }
+        }
+        log.debug("授权完毕的subject ： {}" , authorizationInfo.getRoles());
         return authorizationInfo;
     }
 

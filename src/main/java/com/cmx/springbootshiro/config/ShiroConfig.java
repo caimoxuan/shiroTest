@@ -74,15 +74,13 @@ public class ShiroConfig {
 
         //前端的页面的设置
         shiroFilterFactoryBean.setLoginUrl(loginUrl);
-        shiroFilterFactoryBean.setSuccessUrl(successUrl);
+        //shiroFilterFactoryBean.setSuccessUrl(successUrl);
 
         //拦截器的设置
         Map<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
         //匹配所有请求 authc 需要验证， anon 不需要验证
-        filterChainDefinitionMap.put("/userLogin/nofilterlogin", "form,redirect");
-
-        filterChainDefinitionMap.put("/userLogin/*", "anon");
-
+        filterChainDefinitionMap.put("/userLogin/nofilterlogin", "redirect");
+        filterChainDefinitionMap.put("/userLogin/login", "anon");
         filterChainDefinitionMap.put("/remember", "user");
         //登出shiro已经实现
         filterChainDefinitionMap.put("/logout", "logout");
@@ -91,7 +89,7 @@ public class ShiroConfig {
 
         //配置自定义的拦截器
         Map<String, Filter> filterMap = new LinkedHashMap<>();
-        filterMap.put("form", simpleFormAuthFilter());
+        //filterMap.put("form", simpleFormAuthFilter());
         filterMap.put("redirect", new RedirectFilter());
         shiroFilterFactoryBean.setFilters(filterMap);
         return shiroFilterFactoryBean;
@@ -223,6 +221,12 @@ public class ShiroConfig {
         simpleCookie.setMaxAge(-1);// 30 天  -1 ：关闭浏览器失效
         return simpleCookie;
     }
+
+    /**
+     * 记住我功能 将用户名密码信息通过加密cookie返回页面
+     * 但是记住我功能不安全，使用要慎重
+     * @return
+     */
     @Bean("rememberMeCookie")
     public SimpleCookie rememberCookie(){
         SimpleCookie simpleCookie = new SimpleCookie("rememberMe");

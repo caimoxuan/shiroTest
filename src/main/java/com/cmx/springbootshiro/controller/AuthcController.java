@@ -2,18 +2,15 @@ package com.cmx.springbootshiro.controller;
 
 
 import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/authSuccess")
@@ -33,7 +30,7 @@ public class AuthcController {
 
 
     @RequestMapping(value = "/hasRole")
-    @RequiresPermissions("systemUser")
+    @RequiresRoles("systemUser")
     public String getRole(String username){
 
         log.debug("getRole {}", username);
@@ -43,7 +40,7 @@ public class AuthcController {
 
 
     @RequestMapping("/getString")
-    @RequiresPermissions("admin")
+    @RequiresRoles("admin")
     public String getString(){
         return "if you has admin permission, you can see this!";
     }

@@ -2,6 +2,8 @@ package com.cmx.springbootshiro.shiro.exception;
 
 import org.apache.shiro.authz.UnauthenticatedException;
 import org.apache.shiro.authz.UnauthorizedException;
+import org.apache.shiro.session.UnknownSessionException;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -18,9 +20,11 @@ public class ShiroAuthException implements HandlerExceptionResolver {
         System.out.println("exception" + e);
         try{
              if(e instanceof UnauthorizedException){
-                 httpServletResponse.sendRedirect("http://localhost/userLogin/error/permission.html");
+                 httpServletResponse.setStatus(403);//没有权限
+             }else if(e instanceof UnknownSessionException){
+                 httpServletResponse.setStatus(302); //跳转
              }else{
-                 httpServletResponse.sendRedirect("http://localhost/userLogin/error/error.html");
+                 httpServletResponse.setStatus(400);
              }
         }catch(Exception ex){
 

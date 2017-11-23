@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Service
 public class UserSessionService implements IUserSessionService {
@@ -35,7 +36,7 @@ public class UserSessionService implements IUserSessionService {
     }
 
     @Override
-    public SessionEntity query(SessionEntity se) {
-        return null;
+    public List<SessionEntity> query(SessionEntity se) {
+        return userSessionMapper.query(se.getSession_id());
     }
 }

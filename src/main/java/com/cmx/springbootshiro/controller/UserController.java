@@ -3,11 +3,15 @@ package com.cmx.springbootshiro.controller;
 
 import com.cmx.springbootshiro.entity.SystemUser;
 import com.cmx.springbootshiro.service.SystemUserService;
+import com.cmx.springbootshiro.shiro.entity.SessionEntity;
+import com.cmx.springbootshiro.shiro.service.IUserSessionService;
+import com.cmx.springbootshiro.util.SerializableUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.session.mgt.eis.SessionDAO;
+import org.apache.shiro.subject.SimplePrincipalCollection;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.subject.support.DefaultSubjectContext;
 import org.slf4j.Logger;
@@ -18,9 +22,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @RestController
 @RequestMapping("/userLogin")
@@ -35,17 +38,8 @@ public class UserController {
     @Autowired
     SessionDAO sessionDAO;
 
-    @Value("${shiro.algorith.name}")
-    private String algorithName;
-
-    @Value("${shiro.hash.iterators}")
-    private Integer hashIterator;
-
-
-    @RequestMapping("/getValue")
-    public String getValue(){
-        return algorithName + " : " + hashIterator;
-    }
+    @Autowired
+    IUserSessionService userSessionService;
 
 
     @RequestMapping("/getUser")
@@ -87,22 +81,15 @@ public class UserController {
         try{
             subject.login(token);
 
-            Session session = subject.getSession();
-            System.out.println("获取当前用户的session : " + session.getId() + ",用户session 的过期时间 ：" + session.getTimeout());
-
-            log.debug("这里验证授权: {} ", subject.isPermitted("admin"));
-
-            response.sendRedirect("http://localhost/userLogin/success.html");
         }catch(Exception e){
             System.out.println(e);
             return "faile";
         }
-
-        return "什么都没有发生";
+        return "success";
     }
 
     /**
-     * 这种方式只适用于web端前后端不分离的情况，由于没有登陆的实体页面，会导致返回success
+     * 注意如果没有filter控制 这种方式只适用于web端前后端不分离的情况，由于没有登陆的实体页面，会导致返回success
      * @param request
      * @return
      */
@@ -112,56 +99,62 @@ public class UserController {
         String failMessage = (String)request.getAttribute("shiroLoginFailure");
         System.out.println("login exception : " + failMessage);
         if(failMessage != null){
-            response.sendRedirect("http://localhost/userLogin/login.html");
-            return "fail";
+            //response.sendRedirect("http://localhost/userLogin/login.html");
+            return failMessage;
         }
 
-        response.sendRedirect("http://localhost/userLogin/success.html");
+        //response.sendRedirect("http://localhost/userLogin/success.html");
         return "success";
 
     }
 
 
-    @RequestMapping(value = "/getActiveUser")
-    public String getActivrUser(){
+    @RequestMapping(value = "/getAllSession")
+    @ResponseBody
+    @RequiresRoles({"admin","systemUser"})
+    public Map<Object, Object> getAllSession(){
 
-        Collection<Session> sessionList = sessionDAO.getActiveSessions();
-        for(Session s : sessionList){
+        Map<Object, Object> result = new HashMap<>();
+        List<Map<Object, String>> items = new ArrayList<>();
 
-            System.out.println("存活的session ：" + s.getId());
+        List<SessionEntity> sessionEntities = userSessionService.query(new SessionEntity());
+        for(SessionEntity sessionEntity : sessionEntities){
+                Map<Object, String> map = new HashMap<>(4);
+                Session session = SerializableUtils.deserialize(sessionEntity.getSession_id());
+                String sessionId = (String)session.getId();
+                String host = session.getHost();
+                String lastAccessTime = SimpleDateFormat.getInstance().format(session.getLastAccessTime());
+
+                map.put("sessionId", sessionId);
+                map.put("host", host);
+                map.put("lastAccessTime", lastAccessTime);
+                SimplePrincipalCollection spc = (SimplePrincipalCollection)session.getAttribute(DefaultSubjectContext.PRINCIPALS_SESSION_KEY);
+                if(null != spc){
+                    log.info("getUser : {} ", spc);
+                    map.put("spc", spc.toString());
+                }
+                items.add(map);
         }
 
-        return "success";
+        result.put("row", items);
+        result.put("pageCount",1);
+        result.put("pageSize", 10);
+        result.put("pageNow", 1);
+
+        return result;
     }
 
-    /**
-     * 根据sessionId查看session中的信息
-     * @param sessionId
-     * @return
-     */
-    @RequestMapping(value = "/getSessionTimeOut")
-    public String getSessionTimeOut(String sessionId){
-        Collection<Session> sessionList = sessionDAO.getActiveSessions();
-        for(Session s : sessionList){
-            if(sessionId.equals(s.getId())){
 
-                Date lastAccessTime = s.getLastAccessTime();
-                System.out.println(new Date(lastAccessTime.getTime()+s.getTimeout()));
-
-                String username = s.getAttribute(DefaultSubjectContext.PRINCIPALS_SESSION_KEY).toString();
-                System.out.println(username);
-                System.out.println(lastAccessTime + "  session 会过期时间 ：" + s.getTimeout());
-            }
+    @RequestMapping("/deleteSession")
+    public String deleteSession(String sessionId){
+        if(null == sessionId){
+            return "session is not avaliable";
         }
-
-        return "success";
-    }
-
-
-    @RequestMapping(value = "/getSessionSubjecgt")
-    public String getSubject(String sessionId){
-        Subject subject = SecurityUtils.getSubject();
-        Session s = subject.getSession();
+        try{
+            userSessionService.delete(sessionId);
+        }catch(Exception e){
+            log.error("delete session error : {}", e.toString());
+        }
         return "success";
     }
 
